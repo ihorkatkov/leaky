@@ -10,6 +10,16 @@ It's like a bucket with a hole: tokens, representing permissions to take an acti
 If the bucket is full, new actions must wait, ensuring the overall rate does not exceed the desired threshold.
 Read more about the algorithm here: https://en.wikipedia.org/wiki/Leaky_bucket
 
+## Instalation
+
+Add the following to your `mix.exs` file:
+```elixir
+  def deps do
+  [
+    {:leaky, "~> 0.1.0"},
+  ]
+end
+```
 ## Usage
 
 The rate limiter process can be customized with several options:

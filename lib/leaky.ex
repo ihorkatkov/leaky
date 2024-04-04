@@ -81,6 +81,7 @@ defmodule Leaky do
   ```
    iex> Leaky.inspect(:user_requests)
    iex> 3
+  ```
   """
   @spec inspect(bucket :: bucket(), name :: GenServer.name()) :: integer | nil
   def inspect(bucket, name \\ __MODULE__) do
