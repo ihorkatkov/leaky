@@ -54,6 +54,14 @@ defmodule LeakyTest do
     end
   end
 
+  describe "update_configuration/2" do
+    test "updates configuration in a running process" do
+      Leaky.update_configuration(max_accumulated: 10, refill: 2, interval: 5)
+
+      assert %Leaky.State{max_accumulated: 10, refill: 2, interval: 5} = :sys.get_state(Process.whereis(Leaky))
+    end
+  end
+
   describe "naming options" do
     test "works with {:via, _, _} name" do
       start_supervised!({Registry, [name: Leaky.Registry, keys: :unique]})

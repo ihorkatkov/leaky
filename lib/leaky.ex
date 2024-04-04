@@ -96,6 +96,28 @@ defmodule Leaky do
     GenServer.cast(GenServer.whereis(name), {:increment_tokens_left, bucket, amount})
   end
 
+  @doc """
+  Updates the configuration of the rate limiter process. Changes are applied immediately, affecting the rate limiter's behavior.
+  It is useful for dynamically adjusting the rate limiter's settings without restarting the process.
+
+  Options which can be updated: `max_accumulated`, `interval`, and `refill`.
+
+
+  ## Example
+
+  ```
+  iex> Leaky.update_configuration(max_accumulated: 10, refill: 2, interval: 5)
+  :ok
+  iex> {:allow, 8} == Leaky.acquire(:user_requests, 2)
+  true
+  ```
+
+  """
+  @spec update_configuration(opts :: Keyword.t(), name :: GenServer.name()) :: :ok
+  def update_configuration(opts, name \\ __MODULE__) do
+    GenServer.cast(GenServer.whereis(name), {:update_configuration, opts})
+  end
+
   def start_link(opts) do
     bucket_name = Keyword.fetch!(opts, :bucket_name)
     max_accumulated = Keyword.fetch!(opts, :max_accumulated)
@@ -130,7 +152,7 @@ defmodule Leaky do
   end
 
   @impl GenServer
-  def handle_cast({:increment_tokens_left, bucket, amount}, state) do
+  def handle_cast({:increment_tokens_left, bucket, amount}, %State{} = state) do
     now = :erlang.system_time(:milli_seconds)
     table = state.bucket_name
 
@@ -148,6 +170,14 @@ defmodule Leaky do
     end
 
     {:noreply, state}
+  end
+
+  def handle_cast({:update_configuration, opts}, %State{} = state) do
+    max_accumulated = Keyword.get(opts, :max_accumulated, state.max_accumulated)
+    interval = Keyword.get(opts, :interval, state.interval)
+    refill = Keyword.get(opts, :refill, state.refill)
+
+    {:noreply, %{state | max_accumulated: max_accumulated, interval: interval, refill: refill}}
   end
 
   @impl GenServer
