@@ -66,7 +66,7 @@ defmodule Leaky do
   @spec acquire(bucket :: bucket(), cost :: integer, name :: GenServer.name()) ::
           {:allow, integer} | :deny
   def acquire(bucket, cost, name \\ __MODULE__) do
-    GenServer.call(GenServer.whereis(name), {:acquire, bucket, cost})
+    GenServer.call(name, {:acquire, bucket, cost})
   end
 
   @doc """
@@ -85,7 +85,10 @@ defmodule Leaky do
   """
   @spec inspect(bucket :: bucket(), name :: GenServer.name()) :: integer | nil
   def inspect(bucket, name \\ __MODULE__) do
-    GenServer.call(GenServer.whereis(name), {:inspect, bucket})
+    case GenServer.call(name, {:acquire, bucket, 0}) do
+      {:allow, tokens_left} -> tokens_left
+      :deny -> 0
+    end
   end
 
   @doc """
@@ -94,7 +97,7 @@ defmodule Leaky do
   """
   @spec adjust_tokens(bucket :: bucket(), amount :: integer, name :: GenServer.name()) :: :ok
   def adjust_tokens(bucket, amount, name \\ __MODULE__) do
-    GenServer.cast(GenServer.whereis(name), {:increment_tokens_left, bucket, amount})
+    GenServer.cast(name, {:increment_tokens_left, bucket, amount})
   end
 
   @doc """
@@ -116,7 +119,7 @@ defmodule Leaky do
   """
   @spec update_configuration(opts :: Keyword.t(), name :: GenServer.name()) :: :ok
   def update_configuration(opts, name \\ __MODULE__) do
-    GenServer.cast(GenServer.whereis(name), {:update_configuration, opts})
+    GenServer.cast(name, {:update_configuration, opts})
   end
 
   def start_link(opts) do
@@ -182,16 +185,6 @@ defmodule Leaky do
   end
 
   @impl GenServer
-  def handle_call({:inspect, bucket}, _from, %State{} = state) do
-    available_tokens =
-      case :ets.lookup(state.bucket_name, bucket) do
-        [] -> nil
-        [{_bucket, tokens_left, _last_inserted_at}] -> tokens_left
-      end
-
-    {:reply, available_tokens, state}
-  end
-
   def handle_call({:acquire, bucket, cost}, _from, %State{} = state) do
     now = :erlang.system_time(:milli_seconds)
     table = state.bucket_name

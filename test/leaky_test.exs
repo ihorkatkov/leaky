@@ -3,9 +3,10 @@ defmodule LeakyTest do
 
   @bucket :bucket
   @cost 1
+  @max_accumulated 4
 
   setup do
-    configuration = [max_accumulated: 4, refill: 1, interval: 10, bucket_name: @bucket]
+    configuration = [max_accumulated: @max_accumulated, refill: 1, interval: 10, bucket_name: @bucket]
     start_supervised!({Leaky, configuration})
 
     :ok
@@ -31,7 +32,7 @@ defmodule LeakyTest do
     test "returns amount of available tokens" do
       assert {:allow, 3} == Leaky.acquire(@bucket, @cost)
 
-      assert 3 == Leaky.inspect(@bucket)
+      assert 3.0 == Leaky.inspect(@bucket)
     end
   end
 
@@ -50,7 +51,7 @@ defmodule LeakyTest do
 
       :timer.sleep(2)
 
-      assert 2 == Leaky.inspect(@bucket)
+      assert 2 < Leaky.inspect(@bucket)
     end
   end
 
