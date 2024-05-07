@@ -16,7 +16,7 @@ Add the following to your `mix.exs` file:
 ```elixir
   def deps do
   [
-    {:leaky, "~> 0.1.0"},
+    {:leaky, "~> 0.1.1"},
   ]
 end
 ```
