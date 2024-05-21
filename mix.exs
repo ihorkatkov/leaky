@@ -10,12 +10,20 @@ defmodule Leaky.MixProject do
       source_url: "https://github.com/ihorkatkov/leaky",
       description: description(),
       package: package(),
+      dialyzer: dialyzer(),
       docs: [
         main: "Leaky",
         extras: ["README.md"]
       ],
       start_permanent: Mix.env() == :prod,
       deps: deps()
+    ]
+  end
+
+  defp dialyzer do
+    [
+      plt_core_path: "priv/plts",
+      plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
     ]
   end
 
