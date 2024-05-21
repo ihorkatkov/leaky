@@ -1,0 +1,48 @@
+name: Dialyzer
+
+env:
+  ELIXIR_VERSION: "1.16.0"
+  OTP_VERSION: "26.2"
+  MIX_ENV: dev
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  dialyzer:
+    name: Dialyzer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+      - uses: actions/cache@v3
+        with:
+          path: deps
+          key: ${{ runner.os }}-mix-v2-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+          restore-keys: |
+            ${{ runner.os }}-mix-v2-
+      - uses: actions/cache@v3
+        with:
+          path: _build/test
+          key: ${{ runner.os }}-test-build
+          restore-keys: |
+            ${{ runner.os }}-test-build
+      - name: Install Dependencies
+        run: mix do deps.get, deps.compile
+      - name: Retrieve PLT Cache
+        uses: actions/cache@v3
+        id: plt-cache
+        with:
+          path: priv/plts
+          key: ${{ runner.os }}-dialyzer-plts-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+      - name: Create PLTs
+        if: steps.plt-cache.outputs.cache-hit != 'true'
+        run: |
+          mix dialyzer --plt
+      - name: Run dialyzer
+        run: mix dialyzer --no-check
